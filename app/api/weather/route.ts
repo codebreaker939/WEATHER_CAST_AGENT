@@ -18,6 +18,23 @@ export async function GET(request: NextRequest) {
     const current = await currentResponse.json() as Current, forecast = await forecastResponse.json() as Forecast, now = current.weather[0];
     const recommendations = await weatherAgent.invoke({ temperature: Math.round(current.main.temp), condition: now.main, description: now.description, humidity: current.main.humidity, wind: Math.round(current.wind.speed * 3.6), city: current.name });
     const days = forecast.list.filter((entry) => entry.dt_txt.includes("12:00:00")).slice(0, 4).map((entry, index) => ({ date: entry.dt_txt, label: index === 0 ? "Tomorrow" : new Intl.DateTimeFormat("en", { weekday: "short" }).format(new Date(`${entry.dt_txt.replace(" ", "T")}Z`)), temp: Math.round(entry.main.temp), low: Math.round(entry.main.temp_min), condition: entry.weather[0].main, icon: entry.weather[0].icon }));
-    return NextResponse.json({ city: current.name, country: current.sys.country, condition: now.main, description: now.description, temperature: Math.round(current.main.temp), feelsLike: Math.round(current.main.feels_like), humidity: current.main.humidity, wind: Math.round(current.wind.speed * 3.6), icon: now.icon, forecast: days, ...recommendations });
+    return NextResponse.json({
+      city: current.name,
+      country: current.sys.country,
+      condition: now.main,
+      description: now.description,
+      temperature: Math.round(current.main.temp),
+      feelsLike: Math.round(current.main.feels_like),
+      humidity: current.main.humidity,
+      wind: Math.round(current.wind.speed * 3.6),
+      icon: now.icon,
+      forecast: days,
+      summary: recommendations.summary,
+      recommendations: {
+        food: recommendations.food,
+        music: recommendations.music,
+        places: recommendations.places,
+      },
+    });
   } catch (error) { console.error("Weather request failed", error); return NextResponse.json({ error: "The forecast service is temporarily unavailable. Please try again shortly." }, { status: 502 }); }
 }
